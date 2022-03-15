@@ -9,7 +9,8 @@ builder.Services.AddControllers(options =>
     //Will allow only what specified by Accept header with application/json
     options.ReturnHttpNotAcceptable = true;
 
-}).AddXmlDataContractSerializerFormatters(); //Just one line of code to support XML.
+}).AddNewtonsoftJson() //This effectively replaces input and output formatters of JSON.
+    .AddXmlDataContractSerializerFormatters(); //Just one line of code to support XML.
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

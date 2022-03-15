@@ -30,7 +30,7 @@ namespace UserInfo.API
                         {
                             Id = 2,
                             Name = "Andorid12",
-                            Description = "The latest Andorid"
+                            Description = "The latest Android"
                         }
                     }
                 },

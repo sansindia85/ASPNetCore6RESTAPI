@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using UserInfo.API.Models;
 
@@ -51,6 +52,13 @@ namespace UserInfo.API.Controllers
             int userId,
             PointOfInterestForCreationDto pointOfInterest)
         {
+            //APIControllerAttribute also automatically deserializes to PointOfInterest.
+            //API Controller attribute automatically checks this.
+            //if (!ModelState.IsValid)
+            //{
+            //    return BadRequest();
+            //}
+
             var user = UsersDataStore.Current.Users.FirstOrDefault(u => u.Id == userId);
 
             if (user == null)
@@ -77,5 +85,101 @@ namespace UserInfo.API.Controllers
                 }, finalPointOfInterest);
         }
 
+
+        [HttpPut("{pointofinterestid}")]
+        public ActionResult<PointOfInterestDto> UpdatePointOfInterest(
+            int userId,
+            int pointOfInterestId,
+            PointOfInterestForUpdateDto pointOfInterest)
+        {
+            
+            var user = UsersDataStore.Current.Users
+                .FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            //find point of interest
+            var pointOfInterestFromStore = user.PointsOfInterest
+                .FirstOrDefault(u => u.Id == pointOfInterestId);
+
+            if (pointOfInterestFromStore == null)
+            {
+                return NotFound();
+            }
+
+            //find point of interest
+            pointOfInterestFromStore.Name = pointOfInterest.Name;
+            pointOfInterestFromStore.Description = pointOfInterest.Description;
+
+            return NoContent();
+        }
+
+        [HttpPatch("{pointofinterestid}")]
+        public ActionResult PartiallyUpdatePointOfInterest(
+            int userId, int pointOfInterestId,
+            JsonPatchDocument<PointOfInterestForUpdateDto> patchDocument)
+        {
+            var user = UsersDataStore.Current.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+                return NotFound();
+
+            //find point of interest
+            var pointOfInterestFromStore = user.PointsOfInterest
+                .FirstOrDefault(u => u.Id == pointOfInterestId);
+
+            if (pointOfInterestFromStore == null)
+            {
+                return NotFound();
+            }
+
+            var pointOfInterestToPatch =
+                new PointOfInterestForUpdateDto()
+                {
+                    Name = pointOfInterestFromStore.Name,
+                    Description = pointOfInterestFromStore.Description
+                };
+
+            //Pass the model state if clients make errors
+            patchDocument.ApplyTo(pointOfInterestToPatch, ModelState);
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (!TryValidateModel(pointOfInterestToPatch))
+            {
+                return BadRequest(ModelState);
+            }
+
+            pointOfInterestFromStore.Name = pointOfInterestToPatch.Name;
+            pointOfInterestFromStore.Description = pointOfInterestToPatch.Description;
+
+            return NoContent();
+        }
+
+        [HttpDelete("{pointOfInterestId}")]
+        public ActionResult DeletePointOfInterest(int userId, int pointOfInterestId)
+        {
+            var user = UsersDataStore.Current.Users
+                .FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+            var pointOfInterestFromStore = user.PointsOfInterest
+                .FirstOrDefault(u => u.Id == pointOfInterestId);
+
+            if (pointOfInterestFromStore == null)
+            {
+                return NotFound();
+            }
+
+            user.PointsOfInterest.Remove(pointOfInterestFromStore);
+            return NoContent();
+        }
     }
 }
